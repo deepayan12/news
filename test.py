@@ -1,7 +1,8 @@
 import argparse
 import time
-import news
 import torch
+import news
+import news_utils
 
 
 def parse_args():
@@ -21,13 +22,12 @@ def parse_args():
 
 if __name__ == '__main__':
   args = parse_args()
-#  infile = '../../train_files/{}_split_{}.csv'.format(args.dataset, args.train_idx)
-#  adjlist = news.create_adjlist(infile)
   embfilebase = '{}_dim_{}_bs_{}_lr_{:3.3f}_news'.format(args.dataset.split('.csv')[0], args.dim, args.batch_size, args.lr)
-  adjlist = news.create_adjlist(args.dataset)
+  adjlist, node_ids = news_utils.create_adjlist(args.dataset)
 
   start_time = time.time()
   w, c = news.do_train(adjlist=adjlist,
+                       node_ids=node_ids,
                        dim=args.dim,
                        epochs=args.epochs,
                        batch_size=args.batch_size,
@@ -36,5 +36,5 @@ if __name__ == '__main__':
                        save_every=args.save_every,
                        embfilebase=embfilebase,
                        )
-  news.save_embedding(w, c, embfilebase)
+  news_utils.save_embedding(w, c, embfilebase, node_ids)
   print('Time taken: dataset={}, dim={}, method=NEWS: {:2.2f} secs'.format(args.dataset, args.dim, time.time() - start_time))

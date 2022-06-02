@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 import scipy.special
-import pandas as pd
 import time
+import news_utils
 
 import pandas as pd
 from pandas import Series, DataFrame
@@ -117,26 +117,8 @@ def loss_on_batch(c, w, node_ids, all_nbr_ids, all_num_nbrs, neg_ids, default_t,
   loss_out[:, 0] = torch.mean(torch.clamp(s_neg, min=0), dim=1)
   loss_out[:, 1] = torch.stack([all_t[i] * torch.mean(MF(this_s_pos/all_t[i])) for i, this_s_pos in enumerate(torch.split(s_pos, all_num_nbrs_list, dim=0))])
 
-def create_adjlist(filename='../../train_files/cora_split_0.csv'):
-  df = pd.read_csv(filename, header=None)
-  adjlist = df.groupby(0)[1].apply(lambda s: s.values)
-  return adjlist
 
-def save_embedding(w, c, embedding_filebase):
-  emb = torch.cat([c.reshape(-1,1), w.weight], axis=1).detach().cpu().numpy()
-  np.savez_compressed(embedding_filebase, node_ids=np.arange(emb.shape[0]), emb=emb)
-  print(f'Saved to {embedding_filebase}.npz')
-
-def get_embedding(embedding_file):
-  F = np.load(embedding_file)
-  node_ids = F['node_ids'].astype(int)
-  if max(node_ids) != len(F['node_ids'])-1:
-    print('ERROR in get_embedding: max(node_ids)={} != {}=len(F["node_ids"])-1'.format(max(node_ids), len(F['node_ids'])-1))
-    return None
-  emb = F['emb'][np.argsort(node_ids)]
-  return emb
-
-def do_train(adjlist, dim=4, epochs=1, batch_size=100, seed=0, num_neg_samples=300, default_t=1.0, lr=0.1, save_every=None, embfilebase=None):
+def do_train(adjlist, node_ids, dim=4, epochs=1, batch_size=100, seed=0, num_neg_samples=300, default_t=1.0, lr=0.1, save_every=None, embfilebase=None):
   dtype = torch.float
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
   torch.manual_seed(seed)
@@ -194,6 +176,6 @@ def do_train(adjlist, dim=4, epochs=1, batch_size=100, seed=0, num_neg_samples=3
     expected_time_per_epoch = (time.time() - start_time) / (epoch + 1)
     print('epoch={}, loss={:3.3f} ({:3.3f}, {:3.3f}), expected time: per-epoch={:1.1f}s, total={:1.1f}s'.format(epoch, torch.mean(torch.sum(losses_in_epoch, axis=1)), torch.mean(losses_in_epoch[:,0]), torch.mean(losses_in_epoch[:,1]), expected_time_per_epoch, expected_time_per_epoch * epochs))
     if save_every is not None and embfilebase is not None and (epoch+1) % save_every == 0:
-      save_embedding(w, c, embfilebase+'-epoch-{}'.format(epoch+1))
+      news_utils.save_embedding(w, c, embfilebase+'-epoch-{}'.format(epoch+1), node_ids=node_ids)
 
   return w, c
