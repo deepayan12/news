@@ -12,6 +12,7 @@ Similar files are created after every 40 epochs.
 To load the embedding:
 <pre>
 $ jupyter console
+> import news_utils
 > emb, node_ids = news_utils.get_embedding('test_network_dim_32_bs_500_lr_0.050_news.npz')
 </pre>
 
