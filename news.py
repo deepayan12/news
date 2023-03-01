@@ -82,8 +82,8 @@ def do_multiple_ls(W_nodes, W_nbrs, all_num_nbrs, default_t, device):
   b_bar2 = (sum_sq_diag_E - (all_num_nbrs[nodes_to_consider]-2) * tr_St_S) / (nminus1_safe * nminus1_safe * p)
   b2 = torch.min(d2, b_bar2)
   a2 = d2 - b2
-  alphas = b2/d2clamped * m
-  qs = a2/d2clamped / nminus1_safe
+  qs = b2/d2clamped * m
+  alphas = a2/d2clamped / nminus1_safe
 
   t_for_nodes_to_consider = torch.clamp(torch.sqrt(alphas * sumsq_W_nodes_dot_Xdm + qs * torch.sum(torch.square(W_nodes[nodes_to_consider]), axis=1)), 1e-7)
 
